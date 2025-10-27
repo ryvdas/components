@@ -10,7 +10,7 @@ import { getYouTubeVideos, getLearningStyleKeywords } from '../../../lib/youtube
 import { getResourcesByTopic, filterResourcesByStyle, Resource } from '../../../lib/resources'
 import ResourceCard from '../../../ResourceCard'
 import ProgressTracker from '../../../ProgressTracker'
-import { Loader2, Search, Target, BookOpen, Clock, Star, Filter, X } from 'lucide-react'
+import { Loader2, Search, Target, BookOpen, Clock, Star, Filter, X, Plus } from 'lucide-react'
 
 export default function LearnTopicPage() {
   const params = useParams()
@@ -268,7 +268,20 @@ export default function LearnTopicPage() {
                 <div>
                   <h3 className="text-lg font-semibold text-green-900">Learning Plan Created!</h3>
                   <p className="text-green-700">Your personalized learning plan has been saved. Access it anytime from your Plans menu.</p>
+                  <p className="text-green-600 text-sm mt-1">✨ Add more resources below to customize your plan!</p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Update Message */}
+          {learningPlan && !planCreated && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center">
+                <Target className="h-5 w-5 text-blue-600 mr-2" />
+                <p className="text-sm text-blue-700">
+                  <span className="font-semibold">Learning plan active:</span> Access your plan from the Plans menu.
+                </p>
               </div>
             </div>
           )}
