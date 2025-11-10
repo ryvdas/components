@@ -140,11 +140,8 @@ export default function QuizForm() {
         updatedAt: new Date(),
       }, { merge: true });
       
-      if (isEditMode) {
-        router.push('/plans');
-      } else {
-        router.push('/');
-      }
+      // Always redirect to dashboard after saving learning style
+      router.push('/dashboard');
     } catch (error) {
       console.error('Error saving learning style:', error);
     }
@@ -183,11 +180,11 @@ export default function QuizForm() {
           {isEditMode && (
             <div className="mb-6">
               <button
-                onClick={() => router.push('/plans')}
+                onClick={() => router.push('/dashboard')}
                 className="flex items-center text-blue-600 hover:text-blue-700 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Plans
+                Back to Dashboard
               </button>
             </div>
           )}

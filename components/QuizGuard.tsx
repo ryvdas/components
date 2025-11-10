@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { Target, BookOpen } from 'lucide-react'
+import { handleDailyLogin } from '../lib/gamification'
 
 interface QuizGuardProps {
   children: React.ReactNode
@@ -32,6 +33,11 @@ export default function QuizGuard({ children }: QuizGuardProps) {
           if (userDoc.exists()) {
             const userData = userDoc.data()
             setQuizCompleted(!!userData.learningStyle)
+            
+            // Track daily login for gamification
+            if (userData.learningStyle) {
+              await handleDailyLogin(user.uid)
+            }
           } else {
             setQuizCompleted(false)
           }
@@ -45,7 +51,15 @@ export default function QuizGuard({ children }: QuizGuardProps) {
       setLoading(false)
     })
 
-    return () => unsubscribe()
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      setLoading(false)
+    }, 5000)
+
+    return () => {
+      unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   if (loading) {
@@ -60,6 +74,11 @@ export default function QuizGuard({ children }: QuizGuardProps) {
   }
 
   if (!user || isExcludedPath) {
+    return <>{children}</>
+  }
+
+  // If Firebase fails to load, show children anyway
+  if (!loading && !user) {
     return <>{children}</>
   }
 

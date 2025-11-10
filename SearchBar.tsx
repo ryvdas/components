@@ -11,7 +11,13 @@ export default function SearchBar() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/learn/${encodeURIComponent(query.trim())}`);
+      // Format the query: capitalize first letter of each word and replace spaces with hyphens
+      const formattedQuery = query.trim()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join('-');
+      
+      router.push(`/learn/${formattedQuery}`);
     }
   };
 
@@ -24,7 +30,7 @@ export default function SearchBar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="What do you want to learn? (e.g., JavaScript, Cooking, Photography)"
-            className="w-full px-6 py-4 pl-14 pr-24 text-lg border border-gray-300 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+            className="w-full px-6 py-4 pl-14 pr-24 text-lg border border-gray-300 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
           />
           <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
           <button

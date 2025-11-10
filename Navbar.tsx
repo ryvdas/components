@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { BookOpen, Heart, Target } from 'lucide-react';
+import { BookOpen, Heart, Target, Award } from 'lucide-react';
 import UserDropdown from './components/UserDropdown';
 
 export default function Navbar() {
@@ -19,7 +19,6 @@ export default function Navbar() {
 
     return () => unsubscribe();
   }, []);
-
 
   if (loading) {
     return (
@@ -51,11 +50,11 @@ export default function Navbar() {
             {user ? (
               <>
                 <Link 
-                  href="/plans" 
+                  href="/dashboard" 
                   className="flex items-center text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
                 >
                   <Target className="h-5 w-5 mr-2" />
-                  Plans
+                  Dashboard
                 </Link>
                 <Link 
                   href="/saved" 
@@ -63,6 +62,13 @@ export default function Navbar() {
                 >
                   <Heart className="h-5 w-5 mr-2" />
                   Saved
+                </Link>
+                <Link 
+                  href="/badges" 
+                  className="flex items-center text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+                >
+                  <Award className="h-5 w-5 mr-2" />
+                  Progress
                 </Link>
                 <UserDropdown user={user} />
               </>

@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, doc, deleteDoc } from 'firebase/firestore'
 import { auth, db } from '../../lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import ResourceCard from '../../ResourceCard'
-import { Heart, BookOpen, Filter, X } from 'lucide-react'
+import { Heart, BookOpen, Filter, X, Trash2 } from 'lucide-react'
 
 export default function SavedPage() {
   const [user, setUser] = useState<any>(null)
@@ -95,6 +95,18 @@ export default function SavedPage() {
   }
 
   const filteredResources = getFilteredResources()
+
+  const handleDeleteResource = async (resourceId: string) => {
+    if (!user) return
+    
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'savedResources', resourceId))
+      // Refresh the resources list
+      await fetchSavedResources(user.uid)
+    } catch (error) {
+      console.error('Error deleting resource:', error)
+    }
+  }
 
   if (loading) {
     return (
@@ -240,11 +252,19 @@ export default function SavedPage() {
           {filteredResources.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredResources.map((resource) => (
-                <ResourceCard 
-                  key={resource.id}
-                  resource={resource}
-                  learningStyle={resource.learningStyle}
-                />
+                <div key={resource.id} className="relative">
+                  <button
+                    onClick={() => handleDeleteResource(resource.id)}
+                    className="absolute top-2 right-2 z-50 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+                    aria-label="Delete resource"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <ResourceCard 
+                    resource={resource}
+                    learningStyle={resource.learningStyle}
+                  />
+                </div>
               ))}
             </div>
           ) : savedResources.length > 0 ? (

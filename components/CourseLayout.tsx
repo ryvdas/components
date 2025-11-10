@@ -15,6 +15,7 @@ interface CourseLayoutProps {
 export default function CourseLayout({ topic, resources }: CourseLayoutProps) {
   const [currentResourceIndex, setCurrentResourceIndex] = useState(0)
   const [completedResources, setCompletedResources] = useState<Set<string>>(new Set())
+  const [resourceProgressMap, setResourceProgressMap] = useState<Map<string, number>>(new Map())
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -35,52 +36,88 @@ export default function CourseLayout({ topic, resources }: CourseLayoutProps) {
     if (!user) return
 
     try {
+      // Load ALL progress documents, not just completed ones
       const progressRef = collection(db, 'users', user.uid, 'courseProgress')
-      const q = query(progressRef, where('completed', '==', true))
-      const querySnapshot = await getDocs(q)
+      const querySnapshot = await getDocs(progressRef)
       
       const completed = new Set<string>()
+      const progressMap = new Map<string, number>()
+      
       querySnapshot.docs.forEach(doc => {
         const data = doc.data()
-        if (data.completed) {
-          completed.add(data.resourceId)
+        const resourceId = data.resourceId || doc.id
+        
+        // Track completion - a resource is completed if explicitly marked OR if progress is 100
+        const isCompleted = data.completed || (data.progress >= 100)
+        if (isCompleted) {
+          completed.add(resourceId)
+        }
+        
+        // Track progress percentage (0-100)
+        // Only include progress for resources that are actually in this course
+        const resourceInCourse = resources.some(r => r.id === resourceId)
+        if (resourceInCourse) {
+          progressMap.set(resourceId, data.progress || 0)
         }
       })
       
       setCompletedResources(completed)
+      setResourceProgressMap(progressMap)
     } catch (error) {
       console.error('Error loading completed resources:', error)
     }
   }
 
   const handleResourceComplete = async (resourceId: string) => {
+    console.log('handleResourceComplete called with resourceId:', resourceId)
+    
     const newCompleted = new Set(completedResources)
     newCompleted.add(resourceId)
+    console.log('Updated completed resources set:', Array.from(newCompleted))
     setCompletedResources(newCompleted)
+    
+    // Reload completed resources from Firebase to ensure sync
+    if (user) {
+      await loadCompletedResources()
+    }
+    
+    // Check if all resources are completed and award path completion XP
+    if (newCompleted.size === resources.length && user) {
+      console.log('All resources completed! Awarding path completion XP.')
+      const { handlePathComplete } = await import('../lib/gamification')
+      await handlePathComplete(user.uid)
+    }
   }
 
   const handleProgressUpdate = (resourceId: string, progress: number) => {
     // Update progress in real-time
-    console.log(`Resource ${resourceId} progress: ${progress}%`)
+    const newProgressMap = new Map(resourceProgressMap)
+    newProgressMap.set(resourceId, progress)
+    setResourceProgressMap(newProgressMap)
   }
 
   const getOverallProgress = () => {
     if (resources.length === 0) return 0
-    return Math.round((completedResources.size / resources.length) * 100)
+    
+    // Calculate average progress across all resources
+    let totalProgress = 0
+    resources.forEach(resource => {
+      const progress = resourceProgressMap.get(resource.id) || 0
+      totalProgress += progress
+    })
+    
+    return Math.round(totalProgress / resources.length)
   }
 
   const getNextIncompleteResource = () => {
-    return resources.findIndex(resource => !completedResources.has(resource.id))
+    // Simply go to the next resource index
+    const nextIndex = (currentResourceIndex + 1) % resources.length
+    return nextIndex
   }
 
   const goToNextResource = () => {
     const nextIndex = getNextIncompleteResource()
-    if (nextIndex !== -1) {
-      setCurrentResourceIndex(nextIndex)
-    } else {
-      // All resources completed, go to first one
-      setCurrentResourceIndex(0)
-    }
+    setCurrentResourceIndex(nextIndex)
   }
 
   const goToPreviousResource = () => {
@@ -93,6 +130,19 @@ export default function CourseLayout({ topic, resources }: CourseLayoutProps) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  // Safety check for empty resources
+  if (!resources || resources.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+          <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No resources available</h3>
+          <p className="text-gray-600">There are no resources available for this course yet.</p>
+        </div>
       </div>
     )
   }
@@ -166,9 +216,9 @@ export default function CourseLayout({ topic, resources }: CourseLayoutProps) {
                           {resource.title}
                         </p>
                         <div className="flex items-center space-x-2 text-xs text-gray-500">
-                          <span className="capitalize">{resource.learningStyle}</span>
+                          <span>{resourceProgressMap.get(resource.id) || 0}%</span>
                           <span>•</span>
-                          <span>{resource.duration || 'No duration'}</span>
+                          <span className="capitalize">{resource.learningStyle}</span>
                         </div>
                       </div>
                     </div>
@@ -206,7 +256,7 @@ export default function CourseLayout({ topic, resources }: CourseLayoutProps) {
               <button
                 onClick={goToPreviousResource}
                 disabled={currentResourceIndex === 0}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-700"
               >
                 Previous
               </button>
@@ -249,6 +299,7 @@ export default function CourseLayout({ topic, resources }: CourseLayoutProps) {
             </div>
           </div>
         )}
+
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { User, LogOut, Settings, Target, Heart, BookOpen } from 'lucide-react'
+import { User, LogOut, Settings, Target, Heart, BookOpen, Accessibility, Palette, Bell, Shield } from 'lucide-react'
 
 interface UserDropdownProps {
   user: any
@@ -42,6 +42,18 @@ export default function UserDropdown({ user }: UserDropdownProps) {
     setIsOpen(false)
   }
 
+  const handleAccountSettings = () => {
+    // TODO: Implement account settings page
+    console.log('Account settings clicked')
+    setIsOpen(false)
+  }
+
+  const handleAccessibilitySettings = () => {
+    // TODO: Implement accessibility settings page
+    console.log('Accessibility settings clicked')
+    setIsOpen(false)
+  }
+
   const menuItems = [
     {
       icon: Target,
@@ -59,6 +71,15 @@ export default function UserDropdown({ user }: UserDropdownProps) {
       description: 'View your learning plans'
     },
     {
+      icon: Target,
+      label: 'Dashboard',
+      onClick: () => {
+        router.push('/dashboard')
+        setIsOpen(false)
+      },
+      description: 'Overview of your learning progress'
+    },
+    {
       icon: Heart,
       label: 'Saved Resources',
       onClick: () => {
@@ -66,6 +87,48 @@ export default function UserDropdown({ user }: UserDropdownProps) {
         setIsOpen(false)
       },
       description: 'Your bookmarked resources'
+    }
+  ]
+
+  const settingsItems = [
+    {
+      icon: Settings,
+      label: 'Account Settings',
+      onClick: handleAccountSettings,
+      description: 'Manage your account'
+    },
+    {
+      icon: Accessibility,
+      label: 'Accessibility',
+      onClick: handleAccessibilitySettings,
+      description: 'Customize your experience'
+    },
+    {
+      icon: Palette,
+      label: 'Appearance',
+      onClick: () => {
+        console.log('Appearance settings clicked')
+        setIsOpen(false)
+      },
+      description: 'Theme and display options'
+    },
+    {
+      icon: Bell,
+      label: 'Notifications',
+      onClick: () => {
+        console.log('Notification settings clicked')
+        setIsOpen(false)
+      },
+      description: 'Manage your notifications'
+    },
+    {
+      icon: Shield,
+      label: 'Privacy & Security',
+      onClick: () => {
+        console.log('Privacy settings clicked')
+        setIsOpen(false)
+      },
+      description: 'Control your data and security'
     }
   ]
 
@@ -88,7 +151,7 @@ export default function UserDropdown({ user }: UserDropdownProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+        <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
           {/* User Info */}
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="flex items-center space-x-3">
@@ -102,9 +165,35 @@ export default function UserDropdown({ user }: UserDropdownProps) {
             </div>
           </div>
 
-          {/* Menu Items */}
+          {/* Learning Menu Items */}
           <div className="py-2">
+            <div className="px-4 py-2">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Learning</h3>
+            </div>
             {menuItems.map((item, index) => {
+              const Icon = item.icon
+              return (
+                <button
+                  key={index}
+                  onClick={item.onClick}
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <Icon className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                    <p className="text-xs text-gray-500">{item.description}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Settings Menu Items */}
+          <div className="py-2 border-t border-gray-100">
+            <div className="px-4 py-2">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Settings</h3>
+            </div>
+            {settingsItems.map((item, index) => {
               const Icon = item.icon
               return (
                 <button

@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { collection, query, where, getDocs, orderBy, doc, setDoc } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, doc, setDoc, deleteDoc } from 'firebase/firestore'
 import { auth, db } from '../../lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { BookOpen, Clock, Target, TrendingUp, Plus, Search } from 'lucide-react'
+import { BookOpen, Clock, Target, TrendingUp, Plus, Search, ArrowLeft, Home, Trash2, MoreVertical } from 'lucide-react'
 import Link from 'next/link'
 
 interface LearningPlan {
@@ -25,6 +25,7 @@ export default function LearningPlansPage() {
   const [plans, setPlans] = useState<LearningPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -85,6 +86,20 @@ export default function LearningPlansPage() {
     }
   }
 
+  const deleteLearningPlan = async (planId: string) => {
+    if (!user) return
+
+    try {
+      setDeletingPlanId(planId)
+      await deleteDoc(doc(db, 'users', user.uid, 'learningPlans', planId))
+      setPlans(prev => prev.filter(plan => plan.id !== planId))
+    } catch (error) {
+      console.error('Error deleting learning plan:', error)
+    } finally {
+      setDeletingPlanId(null)
+    }
+  }
+
   const filteredPlans = plans.filter(plan =>
     plan.topic.toLowerCase().includes(searchQuery.toLowerCase()) ||
     plan.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -125,6 +140,18 @@ export default function LearningPlansPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
+          {/* Breadcrumb */}
+          <div className="mb-6">
+            <nav className="flex items-center space-x-2 text-sm text-gray-600">
+              <Link href="/dashboard" className="flex items-center hover:text-blue-600 transition-colors">
+                <Home className="h-4 w-4 mr-1" />
+                Dashboard
+              </Link>
+              <span>/</span>
+              <span className="text-gray-900 font-medium">Learning Plans</span>
+            </nav>
+          </div>
+
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Your Learning Plans</h1>
@@ -149,7 +176,16 @@ export default function LearningPlansPage() {
 
           {/* Quick Create Section */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Create New Learning Plan</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Create New Learning Plan</h2>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to Dashboard
+              </Link>
+            </div>
             <div className="flex flex-wrap gap-3">
               {['JavaScript', 'Python', 'React', 'Machine Learning', 'Design', 'Marketing'].map((topic) => (
                 <button
@@ -171,17 +207,31 @@ export default function LearningPlansPage() {
                 <div key={plan.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">{plan.title}</h3>
                         <p className="text-sm text-gray-600">{plan.description}</p>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        plan.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
-                        plan.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {plan.difficulty}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          plan.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
+                          plan.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {plan.difficulty}
+                        </span>
+                        <button
+                          onClick={() => deleteLearningPlan(plan.id)}
+                          disabled={deletingPlanId === plan.id}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
+                          title="Delete course"
+                        >
+                          {deletingPlanId === plan.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-3 mb-4">
